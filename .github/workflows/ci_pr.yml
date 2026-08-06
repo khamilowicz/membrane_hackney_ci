@@ -1,0 +1,47 @@
+name: CI (PR)
+
+on:
+  pull_request:
+
+# This workflow runs CI jobs for PRs, including from forks
+# To require approval for forks, create a GitHub Environment named "fork-pr-ci"
+# with protection rules that require manual approval.
+# Go to: Settings > Environments > New environment > Name: fork-pr-ci
+# Then enable "Required reviewers" and add the repository owners
+
+jobs:
+  check_fork:
+    runs-on: ubuntu-latest
+    outputs:
+      is_fork: ${{ steps.check.outputs.is_fork }}
+    steps:
+      - id: check
+        run: |
+          if [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
+            echo "is_fork=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_fork=false" >> $GITHUB_OUTPUT
+          fi
+
+  approval_gate:
+    if: needs.check_fork.outputs.is_fork == 'true'
+    needs: check_fork
+    runs-on: ubuntu-latest
+    environment: fork-pr-ci
+    steps:
+      - run: echo "Approved"
+
+  build_test:
+    if: needs.check_fork.outputs.is_fork == 'true'
+    needs: approval_gate
+    uses: membraneframework/membrane_actions/.github/workflows/build-test.yml@main
+
+  lint:
+    if: needs.check_fork.outputs.is_fork == 'true'
+    needs: approval_gate
+    uses: membraneframework/membrane_actions/.github/workflows/lint.yml@main
+
+  test:
+    if: needs.check_fork.outputs.is_fork == 'true'
+    needs: approval_gate
+    uses: membraneframework/membrane_actions/.github/workflows/test.yml@main
