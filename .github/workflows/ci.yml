@@ -3,14 +3,22 @@ name: CI
 on:
   push:
     branches: ["**"]
+  pull_request:
   workflow_dispatch:
+
+# Runs for pushes and for all PRs, including from forks.
+# For PRs from forks, build-test.yml/lint.yml/test.yml each gate behind manual
+# approval via a GitHub Environment named "fork-pr-ci".
+# To enable that gate, create the environment (Settings > Environments > New
+# environment > Name: fork-pr-ci), enable "Required reviewers", and add the
+# repository owners. Without it configured, fork PRs simply run unguarded.
 
 jobs:
   build_test:
-    uses: membraneframework/membrane_actions/.github/workflows/build-test.yml@main
+    uses: membraneframework/membrane_actions/.github/workflows/build-test.yml@add-fork-pr-approval-gate
 
   lint:
-    uses: membraneframework/membrane_actions/.github/workflows/lint.yml@main
+    uses: membraneframework/membrane_actions/.github/workflows/lint.yml@add-fork-pr-approval-gate
 
   test:
-    uses: membraneframework/membrane_actions/.github/workflows/test.yml@main
+    uses: membraneframework/membrane_actions/.github/workflows/test.yml@add-fork-pr-approval-gate
