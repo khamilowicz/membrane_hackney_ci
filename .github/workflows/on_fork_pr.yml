@@ -1,0 +1,24 @@
+name: CI (Fork PR)
+
+on:
+  pull_request:
+
+# Runs CI for pull requests from forks, gated behind manual approval via a
+# GitHub Environment named "fork-pr-ci" (see fork-approval-gate.yml in
+# membraneframework/membrane_actions for the gating logic).
+# To enable the gate, create the environment (Settings > Environments > New
+# environment > Name: fork-pr-ci), enable "Required reviewers", and add the
+# repository owners. Without it configured, fork PRs will not run CI at all -
+# this fails closed rather than running untrusted code unguarded.
+#
+# Non-fork PRs are skipped entirely here; they already run via ci.yml's
+# push trigger.
+
+jobs:
+  fork_gate:
+    uses: membraneframework/membrane_actions/.github/workflows/fork-approval-gate.yml@add-fork-pr-approval-gate
+
+  ci:
+    needs: fork_gate
+    if: needs.fork_gate.outputs.approved == 'true'
+    uses: ./.github/workflows/ci.yml
